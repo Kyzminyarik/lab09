@@ -36,10 +36,13 @@ find_package(Threads)
 hunter_add_package(Boost COMPONENTS program_options
         thread
         filesystem
+        log
         )
 find_package(Boost CONFIG REQUIRED program_options
         thread
         filesystem
+        log
+        log_setup
         )
 hunter_add_package(OpenSSL)
 find_package(OpenSSL REQUIRED)
@@ -50,7 +53,7 @@ find_package(GTest CONFIG REQUIRED)
 
 add_library(${PROJECT_NAME} STATIC
         # enum your files and delete this comment
-        ${CMAKE_CURRENT_SOURCE_DIR}/sources/Downloader.cpp sources/Parser.cpp)
+        ${CMAKE_CURRENT_SOURCE_DIR}/sources/Downloader.cpp sources/Parser.cpp include/logging.hpp sources/logging.cpp)
 #        ${CMAKE_CURRENT_SOURCE_DIR}/sources/Parser.cpp )
 
 add_executable(demo
@@ -70,7 +73,9 @@ target_link_libraries(${PROJECT_NAME}
         Boost::filesystem
         Boost::thread
         Beast::Beast
-        GTest::gtest_main)
+        GTest::gtest_main
+        Boost::log
+        Boost::log_setup)
 target_link_libraries(demo ${PROJECT_NAME})
 
 if(BUILD_TESTS)

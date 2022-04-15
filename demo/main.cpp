@@ -2,6 +2,8 @@
 #include <boost/program_options.hpp>
 #include <ThreadPool.hpp>
 #include <fstream>
+//#include <logging.hpp>
+
 namespace po = boost::program_options;
 Queue<URL> queue_url;
 Queue<Page> queue_page;
@@ -58,23 +60,22 @@ std::string output;
       output = vm.at("output").as<std::string>();
     }
   }
-
+//  set_logs();
   ThreadPool pool_downloader(network_threads);
   ThreadPool pool_parser(parser_threads);
   URL URl{url, depth};
   queue_url.push(std::move(URl));
 
-  while (!queue_url.empty() || !queue_page.empty() ||
-         queue_page.get_count() || queue_url.get_count()) {
+  while (!queue_url.empty() || !queue_page.empty()) {
     pool_downloader.enqueue([] { Downloader::download(); });
     pool_parser.enqueue([] { Parser::parse(); });
   }
 
   std::ofstream ofs{output};
   while (!fs.empty()) {
-    std::string _tmp = fs.front();
-    ofs << _tmp << std::endl;
-    std::cout << _tmp << std::endl;
+    std::string tmp = fs.front();
+    ofs << tmp << std::endl;
+    std::cout << "Parse picture: " << tmp << std::endl;
     fs.pop();
   }
   ofs.close();

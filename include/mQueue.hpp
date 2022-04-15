@@ -27,6 +27,8 @@ class Queue{
   T front(){
     std::lock_guard<std::mutex> lock(mutex);
     T tmp = queue.front();
+    queue.pop();
+    count--;
     return tmp;
   }
 

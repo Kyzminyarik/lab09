@@ -1,14 +1,17 @@
 //
 // Created by pvelp on 4/15/22.
 //
+#include <thread>
 #include <Parser.hpp>
 #include <algorithm>
 #include <gumbo.h>
 #include <regex>
+#include <header.hpp>
+#include "logging.hpp"
 
-extern Queue<URL> queue_url;
-extern Queue<Page> queue_page;
-extern Queue<std::string> fs;
+//Queue<URL> queue_url;
+//Queue<Page> queue_page;
+//Queue<std::string> fs;
 
 bool isImage(const std::string& href) {
   size_t lastDotPos = href.find_last_of('.');
@@ -64,13 +67,17 @@ void search_for_links(GumboNode* node, Page p) {
 }
 
 void Parser::parse() {
+//  set_logs();
   try{
+    std::cout << "parser thread: " << std::this_thread::get_id() << std::endl;
     if (!queue_page.empty()) {
       Page tmp = queue_page.front();
       GumboOutput* output = gumbo_parse(tmp.html.c_str());
       search_for_links(output->root, tmp);
       gumbo_destroy_output(&kGumboDefaultOptions, output);
-      queue_page.pop();
+//      queue_page.pop();
+      std::cout << "Parse page from: " << tmp.protocol+tmp.host+"/" << std::endl;
+      std::cout << queue_url.get_count() << " в очереди ссылок" << std::endl;
      }
   } catch (...){}
 }

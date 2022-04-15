@@ -12,14 +12,17 @@
 #include <boost/asio/ssl/stream.hpp>
 #include "root_certificates.hpp"
 #include <regex>
+#include <thread>
+#include <chrono>
+#include "logging.hpp"
 
 using tcp = boost::asio::ip::tcp;
 namespace ssl = boost::asio::ssl;
 namespace http = boost::beast::http;
 namespace beast = boost::beast;
 
-extern Queue<URL> queue_url;
-extern Queue<Page> queue_page;
+//Queue<URL> queue_url;
+//Queue<Page> queue_page;
 
 void parse_url(std::string url,
                std::string& protocol, std::string& host, std::string& target){
@@ -108,6 +111,7 @@ std::string Downloader::downloadHttpsPage(const std::string &host, const std::st
 }
 
 void Downloader::download() {
+  std::cout << "download thread: " << std::this_thread::get_id() << std::endl;
   if (!queue_url.empty()) {
     URL tmp = queue_url.front();
     std::regex rx(R"(^http[s]?://.*)");
@@ -126,9 +130,12 @@ void Downloader::download() {
     if (protocol == "https") {
       html = Downloader::downloadHttpsPage(host, target);
     }
-    queue_url.pop();
+//    queue_url.pop();
     Page page{html, protocol, host, tmp.depth};
     queue_page.push(std::move(page));
+    std::cout << "Download page from: " << tmp.url << std::endl;
+    std::cout << queue_page.get_count() << " в очереди страниц" << std::endl;
+//    std::cout << page.html << std::endl;
   }
 }
 
