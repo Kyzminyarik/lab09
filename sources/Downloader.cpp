@@ -14,12 +14,14 @@
 #include <regex>
 #include <thread>
 #include <chrono>
-#include "logging.hpp"
+//#include "logging.hpp"
 
 using tcp = boost::asio::ip::tcp;
 namespace ssl = boost::asio::ssl;
 namespace http = boost::beast::http;
 namespace beast = boost::beast;
+
+//std::atomic<int> Downloader::in_work = 0;
 
 //Queue<URL> queue_url;
 //Queue<Page> queue_page;
@@ -110,13 +112,14 @@ std::string Downloader::downloadHttpsPage(const std::string &host, const std::st
   return res.body();
 }
 
-void Downloader::download() {
+void Downloader::download(size_t &f){
+  f++;
   std::cout << "download thread: " << std::this_thread::get_id() << std::endl;
-  if (!queue_url.empty()) {
-    URL tmp = queue_url.front();
+  if (!Parser::queue_url.empty()) {
+    URL tmp = Parser::queue_url.front();
     std::regex rx(R"(^http[s]?://.*)");
     if (!regex_match(tmp.url.begin(), tmp.url.end(), rx)) {
-      queue_url.pop();
+      Parser::queue_url.pop();
       return;
     }
     std::string protocol;

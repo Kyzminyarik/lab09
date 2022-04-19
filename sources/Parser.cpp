@@ -9,10 +9,6 @@
 #include <header.hpp>
 #include "logging.hpp"
 
-//Queue<URL> queue_url;
-//Queue<Page> queue_page;
-//Queue<std::string> fs;
-
 bool isImage(const std::string& href) {
   size_t lastDotPos = href.find_last_of('.');
   if (lastDotPos == std::string::npos) return false;
@@ -53,11 +49,11 @@ void search_for_links(GumboNode* node, Page p) {
     }
 
     if (isImage(tmp)) {
-      fs.push(std::move(tmp));
+      Parser::fs.push(std::move(tmp));
     } else {
       if (p.depth == 1) return;
       URL url{tmp, p.depth - 1};
-      queue_url.push(std::move(url));
+      Parser::queue_url.push(std::move(url));
     }
   }
   GumboVector* children = &node->v.element.children;
@@ -66,18 +62,19 @@ void search_for_links(GumboNode* node, Page p) {
   }
 }
 
-void Parser::parse() {
+void Parser::parse(size_t &f) {
 //  set_logs();
   try{
     std::cout << "parser thread: " << std::this_thread::get_id() << std::endl;
-    if (!queue_page.empty()) {
-      Page tmp = queue_page.front();
+    if (!Downloader::queue_page.empty()) {
+      Page tmp = Downloader::queue_page.front();
       GumboOutput* output = gumbo_parse(tmp.html.c_str());
       search_for_links(output->root, tmp);
       gumbo_destroy_output(&kGumboDefaultOptions, output);
 //      queue_page.pop();
-      std::cout << "Parse page from: " << tmp.protocol+tmp.host+"/" << std::endl;
+      std::cout << "Parse page from: " << tmp.protocol+ "://" +tmp.host+"/" << std::endl;
       std::cout << queue_url.get_count() << " в очереди ссылок" << std::endl;
+      f--;
      }
   } catch (...){}
 }

@@ -3,11 +3,11 @@
 #include <ThreadPool.hpp>
 #include <fstream>
 //#include <logging.hpp>
+Queue<URL> Parser::queue_url;
+Queue<Page> Downloader::queue_page;
+Queue<std::string> Parser::fs;
 
 namespace po = boost::program_options;
-Queue<URL> queue_url;
-Queue<Page> queue_page;
-Queue<std::string> fs;
 
 int main(int argc, char* argv[]) {
   
@@ -61,22 +61,29 @@ std::string output;
     }
   }
 //  set_logs();
+//  Downloader::in_work = 0;
+//  Parser::in_work = 0;
+  size_t f = 0;
   ThreadPool pool_downloader(network_threads);
   ThreadPool pool_parser(parser_threads);
   URL URl{url, depth};
-  queue_url.push(std::move(URl));
+  Parser::queue_url.push(std::move(URl));
+  Downloader::download(f);
+  std::cout << "flag: " << f << std::endl;
+  Parser::parse(f);
+  std::cout << "flag: " << f << std::endl;
 
-  while (!queue_url.empty() || !queue_page.empty()) {
-    pool_downloader.enqueue([] { Downloader::download(); });
-    pool_parser.enqueue([] { Parser::parse(); });
-  }
+//  while (!Parser::queue_url.empty() || !Downloader::queue_page.empty() || f != 0){
+//    pool_downloader.enqueue(Downloader::download, std::ref(f));
+//    pool_parser.enqueue(Parser::parse, std::ref(f));
+//  }
 
   std::ofstream ofs{output};
-  while (!fs.empty()) {
-    std::string tmp = fs.front();
+  while (!Parser::fs.empty()) {
+    std::string tmp = Parser::fs.front();
     ofs << tmp << std::endl;
     std::cout << "Parse picture: " << tmp << std::endl;
-    fs.pop();
+//    Parser::fs.pop();
   }
   ofs.close();
 
