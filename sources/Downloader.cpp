@@ -1,30 +1,26 @@
 // Copyright 2021 Your Name <your_email>
 
-#include <Downoader.hpp>
-#include <header.hpp>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/ssl.hpp>
-#include <boost/beast/version.hpp>
+#include <Downloader.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
-#include "root_certificates.hpp"
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/beast/version.hpp>
+#include <chrono>
+#include <header.hpp>
 #include <regex>
 #include <thread>
-#include <chrono>
+
+#include "root_certificates.hpp"
 //#include "logging.hpp"
 
 using tcp = boost::asio::ip::tcp;
 namespace ssl = boost::asio::ssl;
 namespace http = boost::beast::http;
 namespace beast = boost::beast;
-
-//std::atomic<int> Downloader::in_work = 0;
-
-//Queue<URL> queue_url;
-//Queue<Page> queue_page;
 
 void parse_url(std::string url,
                std::string& protocol, std::string& host, std::string& target){
@@ -41,7 +37,7 @@ void parse_url(std::string url,
 }
 
 
-std::string Downloader::downloadHttpPage(const std::string &host,
+std::string downloadHttpPage(const std::string &host,
                                          const std::string &target) {
   boost::asio::io_context ioc{};
 
@@ -71,12 +67,9 @@ std::string Downloader::downloadHttpPage(const std::string &host,
   return res.body();
 }
 
-std::string Downloader::downloadHttpsPage(const std::string &host, const std::string &target) {
+std::string downloadHttpsPage(const std::string &host, const std::string &target) {
   boost::asio::io_context ioc{};
   ssl::context ctx(ssl::context::tls_client);
-//  ctx.set_default_verify_paths();
-//  ctx.add_verify_path("/etc/ssl/certs/");
-//  ctx.set_verify_mode(boost::asio::ssl::verify_peer);
   load_root_certificates(ctx);
 
   tcp::resolver resolver(ioc);
@@ -112,33 +105,36 @@ std::string Downloader::downloadHttpsPage(const std::string &host, const std::st
   return res.body();
 }
 
-void Downloader::download(size_t &f){
-  f++;
-  std::cout << "download thread: " << std::this_thread::get_id() << std::endl;
-  if (!Parser::queue_url.empty()) {
-    URL tmp = Parser::queue_url.front();
+void download(std::atomic<int> &f,
+              const URL& url,
+              std::queue<Page>& q_page,
+              std::shared_ptr<std::mutex>& mutex){
     std::regex rx(R"(^http[s]?://.*)");
-    if (!regex_match(tmp.url.begin(), tmp.url.end(), rx)) {
-      Parser::queue_url.pop();
+    if (!std::regex_match(url.url.begin(), url.url.end(), rx)) {
       return;
     }
     std::string protocol;
     std::string host;
     std::string target;
     std::string html;
-    parse_url(tmp.url, protocol, host, target);
-    if (protocol == "http") {
-      html = Downloader::downloadHttpPage(host, target);
-    }
-    if (protocol == "https") {
-      html = Downloader::downloadHttpsPage(host, target);
-    }
-//    queue_url.pop();
-    Page page{html, protocol, host, tmp.depth};
-    queue_page.push(std::move(page));
-    std::cout << "Download page from: " << tmp.url << std::endl;
-    std::cout << queue_page.get_count() << " в очереди страниц" << std::endl;
-//    std::cout << page.html << std::endl;
-  }
+    parse_url(url.url, protocol, host, target);
+    try {
+      if (protocol == "http") {
+        html = downloadHttpPage(host, target);
+      }
+      if (protocol == "https") {
+        html = downloadHttpsPage(host, target);
+      }
+    } catch (const std::exception& e) {
+      std::cout << "Failed download" << url.url << "after error: " << e.what()
+                << std::endl;
+      f--;
+      return; }
+    Page page{html, protocol, host, url.depth};
+    mutex->lock();
+    q_page.push(std::move(page));
+        std::cout << q_page.size() << " в очереди страниц" << std::endl;
+    mutex->unlock();
 }
+
 

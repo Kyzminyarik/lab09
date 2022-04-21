@@ -1,16 +1,12 @@
-#include <header.hpp>
+#include "header.hpp"
 #include <boost/program_options.hpp>
 #include <ThreadPool.hpp>
 #include <fstream>
-//#include <logging.hpp>
-Queue<URL> Parser::queue_url;
-Queue<Page> Downloader::queue_page;
-Queue<std::string> Parser::fs;
+#include <atomic>
 
 namespace po = boost::program_options;
 
 int main(int argc, char* argv[]) {
-  
   po::options_description desc("Option");
   desc.add_options()("help", "Help message")
                     ("url,u", po::value<std::string>(), "HTML page addr")
@@ -60,30 +56,53 @@ std::string output;
       output = vm.at("output").as<std::string>();
     }
   }
-//  set_logs();
-//  Downloader::in_work = 0;
-//  Parser::in_work = 0;
-  size_t f = 0;
+  std::atomic<int> fl = 0;
+
+  std::shared_ptr<std::mutex> u_mutex = std::make_shared<std::mutex>();
+  std::shared_ptr<std::mutex> p_mutex = std::make_shared<std::mutex>();
+  std::shared_ptr<std::mutex> f_mutex = std::make_shared<std::mutex>();
+
+  std::queue<URL> q_url;
+  std::queue<Page> q_page;
+  std::queue<std::string> fs;
+
   ThreadPool pool_downloader(network_threads);
   ThreadPool pool_parser(parser_threads);
-  URL URl{url, depth};
-  Parser::queue_url.push(std::move(URl));
-  Downloader::download(f);
-  std::cout << "flag: " << f << std::endl;
-  Parser::parse(f);
-  std::cout << "flag: " << f << std::endl;
 
-//  while (!Parser::queue_url.empty() || !Downloader::queue_page.empty() || f != 0){
-//    pool_downloader.enqueue(Downloader::download, std::ref(f));
-//    pool_parser.enqueue(Parser::parse, std::ref(f));
-//  }
+  URL URl{url, depth};
+  q_url.push(std::move(URl));
+//  download(fl, q_url, q_page, url_mutex, page_mutex);
+//  std::cout << "flag: " << fl << std::endl;
+//  parse(fl, q_url, q_page, fs, url_mutex, page_mutex, fs_mutex);
+//  std::cout << "flag: " << fl << std::endl;
+
+  while (!q_url.empty() || !q_page.empty() || fl != 0) {
+    if (!q_url.empty()) {
+      u_mutex->lock();
+      URL data = q_url.front();
+      q_url.pop();
+      u_mutex->unlock();
+      fl++;
+      pool_downloader.enqueue(
+          [&fl, data, &q_page, &p_mutex] { download(fl, data, q_page, p_mutex); });
+    }
+    if (!q_page.empty()) {
+      p_mutex->lock();
+      Page p = q_page.front();
+      q_page.pop();
+      p_mutex->unlock();
+      pool_parser.enqueue([p, &fl, &q_url, &fs, &p_mutex, &f_mutex]{
+        parse(p, fl, q_url, fs, p_mutex, f_mutex);
+      });
+    }
+  }
 
   std::ofstream ofs{output};
-  while (!Parser::fs.empty()) {
-    std::string tmp = Parser::fs.front();
+  while (!fs.empty()) {
+    std::string tmp = fs.front();
+    fs.pop();
     ofs << tmp << std::endl;
     std::cout << "Parse picture: " << tmp << std::endl;
-//    Parser::fs.pop();
   }
   ofs.close();
 
