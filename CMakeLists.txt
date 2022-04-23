@@ -30,15 +30,16 @@ hunter_add_package(gumbo)
 find_package(gumbo CONFIG REQUIRED)
 hunter_add_package(Beast)
 find_package(Beast CONFIG REQUIRED)
-hunter_add_package(Boost COMPONENTS  thread)
-find_package(Boost CONFIG REQUIRED thread)
-find_package(Threads)
 hunter_add_package(Boost COMPONENTS program_options
         log
+        filesystem
+        thread
         )
 find_package(Boost CONFIG REQUIRED program_options
         log
         log_setup
+        filesystem
+        thread
         )
 hunter_add_package(OpenSSL)
 find_package(OpenSSL REQUIRED)
@@ -69,6 +70,8 @@ target_link_libraries(${PROJECT_NAME}
         Beast::Beast
         GTest::gtest_main
         Boost::log
+        Boost::filesystem
+        Boost::thread
         Boost::log_setup)
 target_link_libraries(demo ${PROJECT_NAME})
 
