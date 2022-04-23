@@ -1,6 +1,5 @@
 // Copyright 2021 Your Name <your_email>
 
-#include <Downloader.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
@@ -13,9 +12,8 @@
 #include <header.hpp>
 #include <regex>
 #include <thread>
-
+#include "logging.hpp"
 #include "root_certificates.hpp"
-//#include "logging.hpp"
 
 using tcp = boost::asio::ip::tcp;
 namespace ssl = boost::asio::ssl;
@@ -108,7 +106,7 @@ std::string downloadHttpsPage(const std::string &host, const std::string &target
 void download(std::atomic<int> &f,
               const URL& url,
               std::queue<Page>& q_page,
-              std::shared_ptr<std::mutex>& mutex){
+              std::mutex& mutex){
     std::regex rx(R"(^http[s]?://.*)");
     if (!std::regex_match(url.url.begin(), url.url.end(), rx)) {
       return;
@@ -131,10 +129,9 @@ void download(std::atomic<int> &f,
       f--;
       return; }
     Page page{html, protocol, host, url.depth};
-    mutex->lock();
+    mutex.lock();
     q_page.push(std::move(page));
         std::cout << q_page.size() << " в очереди страниц" << std::endl;
-    mutex->unlock();
+    mutex.unlock();
+    BOOST_LOG_TRIVIAL(trace) << "download page from url: " << url.url;
 }
-
-

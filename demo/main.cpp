@@ -3,7 +3,7 @@
 #include <ThreadPool.hpp>
 #include <fstream>
 #include <atomic>
-
+#include "logging.hpp"
 namespace po = boost::program_options;
 
 int main(int argc, char* argv[]) {
@@ -58,9 +58,9 @@ std::string output;
   }
   std::atomic<int> fl = 0;
 
-  std::shared_ptr<std::mutex> u_mutex = std::make_shared<std::mutex>();
-  std::shared_ptr<std::mutex> p_mutex = std::make_shared<std::mutex>();
-  std::shared_ptr<std::mutex> f_mutex = std::make_shared<std::mutex>();
+  std::mutex u_mutex;
+  std::mutex p_mutex;
+  std::mutex f_mutex;
 
   std::queue<URL> q_url;
   std::queue<Page> q_page;
@@ -71,26 +71,24 @@ std::string output;
 
   URL URl{url, depth};
   q_url.push(std::move(URl));
-//  download(fl, q_url, q_page, url_mutex, page_mutex);
-//  std::cout << "flag: " << fl << std::endl;
-//  parse(fl, q_url, q_page, fs, url_mutex, page_mutex, fs_mutex);
-//  std::cout << "flag: " << fl << std::endl;
+  set_logs();
+  logs::add_common_attributes();
 
   while (!q_url.empty() || !q_page.empty() || fl != 0) {
     if (!q_url.empty()) {
-      u_mutex->lock();
+      u_mutex.lock();
       URL data = q_url.front();
       q_url.pop();
-      u_mutex->unlock();
+      u_mutex.unlock();
       fl++;
       pool_downloader.enqueue(
           [&fl, data, &q_page, &p_mutex] { download(fl, data, q_page, p_mutex); });
     }
     if (!q_page.empty()) {
-      p_mutex->lock();
+      p_mutex.lock();
       Page p = q_page.front();
       q_page.pop();
-      p_mutex->unlock();
+      p_mutex.unlock();
       pool_parser.enqueue([p, &fl, &q_url, &fs, &p_mutex, &f_mutex]{
         parse(p, fl, q_url, fs, p_mutex, f_mutex);
       });

@@ -2,7 +2,6 @@
 // Created by pvelp on 4/15/22.
 //
 #include <thread>
-#include <Parser.hpp>
 #include <algorithm>
 #include <gumbo.h>
 #include <regex>
@@ -25,8 +24,8 @@ bool isImage(const std::string& href) {
 void search_for_links(GumboNode* node, Page p,
                       std::queue<URL>& q_url,
                       std::queue<std::string>& fs,
-                      std::shared_ptr<std::mutex>& mutex,
-                      std::shared_ptr<std::mutex>& fs_mutex) {
+                      std::mutex& mutex,
+                      std::mutex& fs_mutex) {
   if (node->type != GUMBO_NODE_ELEMENT) {
     return;
   }
@@ -53,15 +52,15 @@ void search_for_links(GumboNode* node, Page p,
     }
 
     if (isImage(tmp)) {
-      fs_mutex->lock();
+      fs_mutex.lock();
       fs.push(std::move(tmp));
-      fs_mutex->unlock();
+      fs_mutex.unlock();
     } else {
       if (p.depth == 1) return;
       URL url{tmp, p.depth - 1};
-      mutex->lock();
+      mutex.lock();
       q_url.push(std::move(url));
-      mutex->unlock();
+      mutex.unlock();
     }
   }
   GumboVector* children = &node->v.element.children;
@@ -74,12 +73,14 @@ void parse(const Page& p,
            std::atomic<int> &f,
            std::queue<URL>& q_url,
            std::queue<std::string>& fs,
-           std::shared_ptr<std::mutex>& mutex,
-           std::shared_ptr<std::mutex>& fs_mutex) {
+           std::mutex& mutex,
+           std::mutex& fs_mutex) {
+
     GumboOutput* output = gumbo_parse(p.html.c_str());
     search_for_links(output->root, p, q_url, fs, mutex, fs_mutex);
     gumbo_destroy_output(&kGumboDefaultOptions, output);
     std::cout << q_url.size() << " в очереди ссылок" << std::endl;
     f--;
     std::cout << "f =  " << f << std::endl;
+    BOOST_LOG_TRIVIAL(trace) << "Parse page form: " << p.protocol + "://" + p.host;
   }
