@@ -1,6 +1,4 @@
-//
-// Created by Pavel Toshchakov on 14.04.2022.
-//
+// Copyright 2022 pvelp
 #ifndef INCLUDE_THREADPOOL_HPP_
 #define INCLUDE_THREADPOOL_HPP_
 
@@ -42,12 +40,12 @@ inline ThreadPool::ThreadPool(size_t threads)
     workers.emplace_back(
         [this]
         {
-          for(;;)
+          for (;;)
           {
             std::function<void()> task;
             {
               std::unique_lock<std::mutex> lock(this->queue_mutex);
-              this->condition.wait(lock,[this]
+              this->condition.wait(lock, [this]
                                    {return this->stop ||
                                             !this->tasks.empty();});
               if (this->stop && this->tasks.empty())
@@ -75,7 +73,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
     std::unique_lock<std::mutex> lock(queue_mutex);
 
     // don't allow enqueueing after stopping the pool
-    if(stop)
+    if (stop)
       throw std::runtime_error("enqueue on stopped ThreadPool");
 
     tasks.emplace([task](){ (*task)(); });
@@ -92,7 +90,7 @@ inline ThreadPool::~ThreadPool()
     stop = true;
   }
   condition.notify_all();
-  for(std::thread &worker: workers)
+  for (std::thread &worker: workers)
     worker.join();
 }
 

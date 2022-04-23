@@ -1,5 +1,4 @@
-//
-// Created by pvelp on 4/16/22.
+// Copyright 2022 pvelp
 
 #include "logging.hpp"
 

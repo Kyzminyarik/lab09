@@ -1,4 +1,4 @@
-// Copyright 2022 pvelps
+// Copyright 2022 pvelp
 #include <thread>
 #include <algorithm>
 #include <gumbo.h>
@@ -74,7 +74,6 @@ void parse(const Page& p,
            std::queue<std::string>& fs,
            std::mutex& mutex,
            std::mutex& fs_mutex) {
-
     GumboOutput* output = gumbo_parse(p.html.c_str());
     search_for_links(output->root, p, q_url, fs, mutex, fs_mutex);
     gumbo_destroy_output(&kGumboDefaultOptions, output);
