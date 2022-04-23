@@ -30,17 +30,13 @@ hunter_add_package(gumbo)
 find_package(gumbo CONFIG REQUIRED)
 hunter_add_package(Beast)
 find_package(Beast CONFIG REQUIRED)
-hunter_add_package(Boost COMPONENTS  thread filesystem)
-find_package(Boost CONFIG REQUIRED thread filesystem)
+hunter_add_package(Boost COMPONENTS  thread)
+find_package(Boost CONFIG REQUIRED thread)
 find_package(Threads)
 hunter_add_package(Boost COMPONENTS program_options
-        thread
-        filesystem
         log
         )
 find_package(Boost CONFIG REQUIRED program_options
-        thread
-        filesystem
         log
         log_setup
         )
@@ -70,8 +66,6 @@ target_link_libraries(${PROJECT_NAME}
         gumbo::gumbo
         OpenSSL::SSL
         Boost::program_options
-        Boost::filesystem
-        Boost::thread
         Beast::Beast
         GTest::gtest_main
         Boost::log
