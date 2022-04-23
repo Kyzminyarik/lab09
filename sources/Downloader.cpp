@@ -1,4 +1,4 @@
-// Copyright 2021 Your Name <your_email>
+// Copyright 2022 pvelp
 
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -65,7 +65,8 @@ std::string downloadHttpPage(const std::string &host,
   return res.body();
 }
 
-std::string downloadHttpsPage(const std::string &host, const std::string &target) {
+std::string downloadHttpsPage(const std::string &host,
+                              const std::string &target) {
   boost::asio::io_context ioc{};
   ssl::context ctx(ssl::context::tls_client);
   load_root_certificates(ctx);

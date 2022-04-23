@@ -1,9 +1,7 @@
-//
-// Created by Pavel Toshchakov on 14.04.2022.
-//
+// Copyright 2022 pvelp
 
-#ifndef TEMPLATE_ROOT_CERTIFICATES_HPP
-#define TEMPLATE_ROOT_CERTIFICATES_HPP
+#ifndef INCLUDE_ROOT_CERTIFICATES_HPP_
+#define INCLUDE_ROOT_CERTIFICATES_HPP_
 #include <boost/asio/ssl.hpp>
 #include <string>
 
@@ -117,4 +115,4 @@ inline void load_root_certificates(ssl::context& ctx) {
   if (ec) throw boost::system::system_error{ec};
 }
 
-#endif  // TEMPLATE_ROOT_CERTIFICATES_HPP
+#endif  // INCLUDE_ROOT_CERTIFICATES_HPP_

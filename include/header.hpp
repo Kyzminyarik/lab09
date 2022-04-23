@@ -1,7 +1,7 @@
 // Copyright 2021 Your Name <your_email>
 
-#ifndef INCLUDE_EXAMPLE_HPP_
-#define INCLUDE_EXAMPLE_HPP_
+#ifndef INCLUDE_HEADER_HPP_
+#define INCLUDE_HEADER_HPP_
 
 #include <atomic>
 #include <iostream>
@@ -34,4 +34,4 @@ void parse(const Page& p,
           std::mutex& mutex,
           std::mutex& fs_mutex);
 
-#endif // INCLUDE_EXAMPLE_HPP_
+#endif // INCLUDE_HEADER_HPP_

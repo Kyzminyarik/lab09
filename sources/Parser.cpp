@@ -1,6 +1,4 @@
-//
-// Created by pvelp on 4/15/22.
-//
+// Copyright 2022 pvelps
 #include <thread>
 #include <algorithm>
 #include <gumbo.h>
@@ -65,7 +63,8 @@ void search_for_links(GumboNode* node, Page p,
   }
   GumboVector* children = &node->v.element.children;
   for (unsigned int i = 0; i < children->length; ++i) {
-    search_for_links(static_cast<GumboNode*>(children->data[i]), p, q_url, fs, mutex, fs_mutex);
+    search_for_links(static_cast<GumboNode*>(children->data[i]), p,
+                     q_url, fs, mutex, fs_mutex);
   }
 }
 
@@ -82,5 +81,6 @@ void parse(const Page& p,
     std::cout << q_url.size() << " в очереди ссылок" << std::endl;
     f--;
     std::cout << "f =  " << f << std::endl;
-    BOOST_LOG_TRIVIAL(trace) << "Parse page form: " << p.protocol + "://" + p.host;
+    BOOST_LOG_TRIVIAL(trace) << "Parse page form: "
+                             << p.protocol + "://" + p.host;
   }
